@@ -1,0 +1,1657 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="STUDYFLOW - Modern Student Task Manager & Productivity Dashboard with Supabase Auth, PostgreSQL persistence, custom Pomodoro study timer, interactive calendar, local music player, and focus mode.">
+  <meta name="keywords" content="student task manager, studyflow, pomodoro study timer, academic planner, study music, homework tracker, supabase">
+  <meta name="author" content="STUDYFLOW">
+  <meta name="theme-color" content="#090d16">
+  <title>🎓 STUDYFLOW — Student Task Manager & Productivity Dashboard</title>
+
+  <!-- Google Fonts: Plus Jakarta Sans, Outfit, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Supabase JS Client v2 (Official CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Supabase Configuration & Helper -->
+  <script src="supabase-config.js"></script>
+
+  <!-- Application Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Ambient Animated Mesh Background -->
+  <div class="bg-mesh" aria-hidden="true">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+    <div class="grid-overlay"></div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 1. AUTHENTICATION OVERLAY / SCREENS (LOGIN, SIGN UP, FORGOT PASSWORD)     -->
+  <!-- ========================================================================= -->
+  <div class="auth-overlay" id="authOverlay">
+    <div class="auth-container">
+      
+      <!-- Brand Header -->
+      <div class="auth-brand-wrap">
+        <div class="brand-logo-pill">
+          <span class="brand-emoji">🎓</span>
+          <span class="brand-name">STUDY<strong>FLOW</strong></span>
+        </div>
+        <p class="auth-brand-tagline">Student Task Manager &amp; Productivity Dashboard</p>
+      </div>
+
+      <!-- Supabase Connection Badge on Auth Screen -->
+      <div class="auth-connection-bar" id="authConnectionBar">
+        <span class="conn-dot" id="authConnDot"></span>
+        <span class="conn-text" id="authConnText">Checking Supabase connection...</span>
+        <button type="button" class="conn-setup-btn" id="authOpenConfigBtn" title="Configure Supabase">⚙️ Settings</button>
+      </div>
+
+      <!-- AUTH CARD 1: LOGIN -->
+      <div class="auth-card" id="loginCard">
+        <div class="auth-card-header">
+          <h2 class="auth-title">Welcome Back 👋</h2>
+          <p class="auth-subtitle">Continue your productivity journey.</p>
+        </div>
+
+        <form id="loginForm" class="auth-form" novalidate>
+          <div class="form-group">
+            <label for="loginEmail" class="form-label">Email Address <span class="required-star">*</span></label>
+            <div class="input-icon-wrap">
+              <span class="field-icon">✉️</span>
+              <input type="email" id="loginEmail" class="form-control" placeholder="student@university.edu" required autocomplete="email">
+            </div>
+            <span class="form-error-msg" id="loginEmailError">Please enter a valid email address.</span>
+          </div>
+
+          <div class="form-group">
+            <div class="label-with-link">
+              <label for="loginPassword" class="form-label">Password <span class="required-star">*</span></label>
+              <button type="button" class="link-btn" id="toForgotPasswordBtn">Forgot Password?</button>
+            </div>
+            <div class="input-icon-wrap">
+              <span class="field-icon">🔒</span>
+              <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+              <button type="button" class="toggle-password-btn" id="toggleLoginPasswordBtn" aria-label="Toggle password visibility">👁️</button>
+            </div>
+            <span class="form-error-msg" id="loginPasswordError">Please enter your password.</span>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block btn-large btn-auth-submit" id="loginSubmitBtn">
+            <span class="btn-spinner" id="loginSpinner" style="display: none;"></span>
+            <span class="btn-label" id="loginBtnLabel">Login</span>
+          </button>
+        </form>
+
+        <div class="auth-card-footer">
+          <p class="auth-switch-text">
+            Don't have an account? 
+            <button type="button" class="link-btn font-bold" id="toSignUpBtn">Sign up</button>
+          </p>
+
+          <div class="auth-divider">
+            <span>or try without signing in</span>
+          </div>
+
+          <button type="button" class="btn btn-secondary btn-block" id="demoModeBtn" title="Explore STUDYFLOW with full features in local demo mode">
+            <span>⚡ Explore Demo / Guest Mode</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- AUTH CARD 2: SIGN UP -->
+      <div class="auth-card" id="signupCard" style="display: none;">
+        <div class="auth-card-header">
+          <h2 class="auth-title">Create Your Account</h2>
+          <p class="auth-subtitle">Stay organized, hit every deadline, and focus deeply.</p>
+        </div>
+
+        <form id="signupForm" class="auth-form" novalidate>
+          <div class="form-group">
+            <label for="signupFullName" class="form-label">Full Name <span class="required-star">*</span></label>
+            <div class="input-icon-wrap">
+              <span class="field-icon">👤</span>
+              <input type="text" id="signupFullName" class="form-control" placeholder="e.g. Ahmadullah" required autocomplete="name">
+            </div>
+            <span class="form-error-msg" id="signupNameError">Please enter your full name.</span>
+          </div>
+
+          <div class="form-group">
+            <label for="signupEmail" class="form-label">Email Address <span class="required-star">*</span></label>
+            <div class="input-icon-wrap">
+              <span class="field-icon">✉️</span>
+              <input type="email" id="signupEmail" class="form-control" placeholder="student@university.edu" required autocomplete="email">
+            </div>
+            <span class="form-error-msg" id="signupEmailError">Please enter a valid email address.</span>
+          </div>
+
+          <div class="form-group">
+            <label for="signupPassword" class="form-label">Password <span class="required-star">*</span></label>
+            <div class="input-icon-wrap">
+              <span class="field-icon">🔒</span>
+              <input type="password" id="signupPassword" class="form-control" placeholder="At least 6 characters" required minlength="6" autocomplete="new-password">
+              <button type="button" class="toggle-password-btn" id="toggleSignupPasswordBtn" aria-label="Toggle password visibility">👁️</button>
+            </div>
+            <span class="form-error-msg" id="signupPasswordError">Password must be at least 6 characters.</span>
+          </div>
+
+          <div class="form-group">
+            <label for="signupConfirmPassword" class="form-label">Confirm Password <span class="required-star">*</span></label>
+            <div class="input-icon-wrap">
+              <span class="field-icon">🔐</span>
+              <input type="password" id="signupConfirmPassword" class="form-control" placeholder="Repeat your password" required autocomplete="new-password">
+            </div>
+            <span class="form-error-msg" id="signupConfirmError">Passwords do not match.</span>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block btn-large btn-auth-submit" id="signupSubmitBtn">
+            <span class="btn-spinner" id="signupSpinner" style="display: none;"></span>
+            <span class="btn-label" id="signupBtnLabel">Create Account</span>
+          </button>
+        </form>
+
+        <div class="auth-card-footer">
+          <p class="auth-switch-text">
+            Already have an account? 
+            <button type="button" class="link-btn font-bold" id="toLoginFromSignupBtn">Log in</button>
+          </p>
+        </div>
+      </div>
+
+      <!-- AUTH CARD 3: FORGOT PASSWORD -->
+      <div class="auth-card" id="forgotCard" style="display: none;">
+        <div class="auth-card-header">
+          <h2 class="auth-title">Reset Password 🔑</h2>
+          <p class="auth-subtitle">Enter your email and we'll send you a password recovery link.</p>
+        </div>
+
+        <form id="forgotForm" class="auth-form" novalidate>
+          <div class="form-group">
+            <label for="forgotEmail" class="form-label">Registered Email <span class="required-star">*</span></label>
+            <div class="input-icon-wrap">
+              <span class="field-icon">✉️</span>
+              <input type="email" id="forgotEmail" class="form-control" placeholder="student@university.edu" required autocomplete="email">
+            </div>
+            <span class="form-error-msg" id="forgotEmailError">Please enter a valid email address.</span>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block btn-large btn-auth-submit" id="forgotSubmitBtn">
+            <span class="btn-spinner" id="forgotSpinner" style="display: none;"></span>
+            <span class="btn-label" id="forgotBtnLabel">Send Reset Link</span>
+          </button>
+        </form>
+
+        <div class="auth-card-footer">
+          <p class="auth-switch-text">
+            Remember your credentials? 
+            <button type="button" class="link-btn font-bold" id="toLoginFromForgotBtn">Back to Login</button>
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 2. MAIN APPLICATION (PROTECTED DASHBOARD)                                 -->
+  <!-- ========================================================================= -->
+  <div class="app-layout" id="appLayout">
+
+    <!-- Top Navigation Header -->
+    <header class="app-header" id="appHeader">
+      <div class="header-container">
+        
+        <!-- Brand -->
+        <div class="brand">
+          <a href="#dashboard" class="brand-link" aria-label="STUDYFLOW Home">
+            <span class="brand-icon">🎓</span>
+            <span class="brand-text">
+              STUDY<span class="brand-accent">FLOW</span>
+            </span>
+          </a>
+          <span class="brand-badge" id="demoModeBadge" style="display: none;">Demo Mode</span>
+        </div>
+
+        <!-- Navigation Menu -->
+        <nav class="nav-menu" id="navMenu" aria-label="Main Navigation">
+          <ul class="nav-list">
+            <li><a href="#dashboard" class="nav-link active" id="navDashboard"><span class="nav-icon">📊</span> Dashboard</a></li>
+            <li><a href="#tasks" class="nav-link" id="navTasks"><span class="nav-icon">📚</span> Tasks</a></li>
+            <li><a href="#calendar" class="nav-link" id="navCalendar"><span class="nav-icon">📅</span> Calendar</a></li>
+            <li><a href="#timer" class="nav-link" id="navTimer"><span class="nav-icon">⏱️</span> Study Timer</a></li>
+            <li><a href="#productivity" class="nav-link" id="navProductivity"><span class="nav-icon">📈</span> Productivity</a></li>
+            <li><a href="#music" class="nav-link" id="navMusic"><span class="nav-icon">🎵</span> Music</a></li>
+          </ul>
+        </nav>
+
+        <!-- Header Actions -->
+        <div class="header-actions">
+          
+          <!-- Focus Mode Quick Button -->
+          <button type="button" class="btn btn-focus-trigger" id="headerFocusModeBtn" title="Enter Distraction-Free Focus Mode">
+            <span class="focus-pulse-dot"></span>
+            <span>Focus Mode</span>
+          </button>
+
+          <!-- In-App Notification Center Bell Trigger & Panel -->
+          <div class="notification-dropdown-wrapper">
+            <button type="button" class="notification-bell-btn" id="notificationBellBtn" aria-label="Notifications" title="Notifications">
+              <span class="bell-icon">🔔</span>
+              <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+            </button>
+
+            <!-- Dropdown Notification Panel -->
+            <div class="notification-panel" id="notificationPanel" style="display: none;">
+              <div class="notif-panel-header">
+                <div class="notif-header-title">
+                  <span>🔔</span>
+                  <h4>Notifications</h4>
+                  <span class="notif-count-tag" id="notifUnreadCountBadge">0 new</span>
+                </div>
+                <button type="button" class="link-btn notif-mark-all-btn" id="markAllNotificationsReadBtn">
+                  ✓ Mark all as read
+                </button>
+              </div>
+
+              <!-- Notification Items List -->
+              <div class="notification-items-list" id="notificationItemsList">
+                <div class="notif-empty-state">
+                  <span class="notif-empty-icon">✨</span>
+                  <p>No notifications yet. Approaching deadlines will appear here.</p>
+                </div>
+              </div>
+
+              <div class="notif-panel-footer">
+                <button type="button" class="link-btn notif-settings-btn" id="openNotifSettingsFromPanelBtn">
+                  ⚙️ Notification Settings
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Add Task Button -->
+          <button type="button" class="btn btn-primary btn-glow" id="openAddModalBtn" aria-label="Create New Task">
+            <span class="btn-icon">➕</span>
+            <span class="btn-label">New Task</span>
+          </button>
+
+          <!-- Theme Toggle Button -->
+          <button type="button" class="theme-toggle-btn" id="themeToggleBtn" aria-label="Toggle Dark/Light Mode" title="Toggle theme">
+            <span class="theme-icon" id="themeIcon">☀️</span>
+          </button>
+
+          <!-- User Profile Dropdown Menu Trigger -->
+          <div class="profile-dropdown-wrapper">
+            <button type="button" class="profile-btn" id="profileDropdownBtn" aria-label="Open User Profile Menu" aria-expanded="false">
+              <span class="profile-avatar" id="navAvatar">👨‍🎓</span>
+              <span class="profile-name-text" id="navUserName">Student</span>
+              <span class="dropdown-chevron">▾</span>
+            </button>
+
+            <!-- Dropdown Menu -->
+            <div class="profile-menu" id="profileMenu" style="display: none;">
+              <div class="menu-user-header">
+                <p class="menu-user-name" id="menuUserFullName">Ahmadullah</p>
+                <p class="menu-user-email" id="menuUserEmail">student@university.edu</p>
+              </div>
+              <div class="menu-divider"></div>
+              <button type="button" class="menu-item" id="menuEditProfileBtn">
+                <span class="menu-item-icon">👤</span> Edit Profile
+              </button>
+              <button type="button" class="menu-item" id="menuNotifSettingsBtn">
+                <span class="menu-item-icon">🔔</span> Notification Settings
+              </button>
+              <button type="button" class="menu-item" id="menuTimerSettingsBtn">
+                <span class="menu-item-icon">⚙️</span> Timer &amp; Settings
+              </button>
+              <button type="button" class="menu-item" id="menuSupabaseConfigBtn">
+                <span class="menu-item-icon">🔗</span> Supabase Config
+              </button>
+              <div class="menu-divider"></div>
+              <button type="button" class="menu-item menu-item-danger" id="menuLogoutBtn">
+                <span class="menu-item-icon">🚪</span> Logout
+              </button>
+            </div>
+          </div>
+
+          <!-- Mobile Hamburger Toggle Button -->
+          <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open Navigation Menu" aria-expanded="false">
+            <span class="hamburger-bar"></span>
+            <span class="hamburger-bar"></span>
+            <span class="hamburger-bar"></span>
+          </button>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- Main Application Content Area -->
+    <main class="main-content" id="mainContent">
+
+      <!-- IN-APP CRITICAL DEADLINE REMINDER BANNER -->
+      <div class="deadline-reminder-banner" id="deadlineReminderBanner" style="display: none;">
+        <div class="banner-icon-wrap" id="bannerUrgencyIcon">🚨</div>
+        <div class="banner-text-content">
+          <div class="banner-header-row">
+            <span class="banner-urgency-tag" id="bannerUrgencyTag">DEADLINE APPROACHING</span>
+            <span class="banner-time-tag" id="bannerTimeTag">Due Tomorrow</span>
+          </div>
+          <h4 class="banner-task-title" id="bannerTaskTitle">Database Management Systems Assignment</h4>
+          <p class="banner-task-subtext" id="bannerTaskSubtext">Due tomorrow at 11:59 PM. Don't miss this deadline!</p>
+        </div>
+        <div class="banner-actions-row">
+          <button type="button" class="btn btn-primary btn-sm" id="bannerViewTaskBtn">View Task</button>
+          <button type="button" class="btn btn-secondary btn-sm" id="bannerDismissBtn">Dismiss</button>
+        </div>
+      </div>
+
+      <!-- SOFT BROWSER NOTIFICATION PERMISSION PROMPT -->
+      <div class="permission-prompt-card" id="permissionPromptCard" style="display: none;">
+        <div class="prompt-icon-box">🔔</div>
+        <div class="prompt-text-box">
+          <h4>Stay on top of your deadlines</h4>
+          <p>Allow notifications so STUDYFLOW can remind you about upcoming coursework even when you are working in other tabs.</p>
+        </div>
+        <div class="prompt-buttons-box">
+          <button type="button" class="btn btn-primary btn-sm" id="enableNotificationsBtn">Enable Notifications</button>
+          <button type="button" class="btn btn-secondary btn-sm" id="dismissPermissionPromptBtn">Maybe Later</button>
+        </div>
+      </div>
+
+      <!-- ===================================================================== -->
+      <!-- SECTION 1: DASHBOARD HERO & STATS                                     -->
+      <!-- ===================================================================== -->
+      <section class="section dashboard-section" id="dashboard">
+        
+        <!-- Hero Banner -->
+        <div class="hero-banner">
+          <div class="hero-text-content">
+            <div class="hero-pill-badge">
+              <span class="pulse-dot"></span>
+              <span id="heroBadgeText">Academic Command Center</span>
+            </div>
+            <!-- Dynamic greeting: "Good morning / afternoon / evening, <Name> 👋" -->
+            <h1 class="hero-title" id="heroGreeting">Good evening, Student 👋</h1>
+            <h2 class="hero-tagline">Let's make today productive.</h2>
+            <p class="hero-subtitle" id="heroSubtitle">Stay organized, hit every deadline, and achieve your academic goals.</p>
+            
+            <div class="hero-actions-row">
+              <button type="button" class="btn btn-primary btn-large btn-hero-add" id="heroAddTaskBtn">
+                <span class="btn-icon">✨</span>
+                <span>+ New Task</span>
+              </button>
+              <button type="button" class="btn btn-secondary btn-large" id="heroStartFocusBtn">
+                <span>🎯 Start Focus Mode</span>
+              </button>
+              <div class="hero-date-badge" id="currentDateBadge">
+                <span class="date-icon">🗓️</span>
+                <span id="currentDateText">Loading date...</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hero Decorative Graphic -->
+          <div class="hero-decor-orb" aria-hidden="true">
+            <div class="orb-inner">
+              <span class="orb-icon">🎯</span>
+              <div class="orb-pulse"></div>
+            </div>
+            <div class="orb-metric-tag" id="orbStudyGoalText">
+              <span>Goal: 4h/day</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4 Statistics Cards Grid -->
+        <div class="stats-grid" id="statsGrid">
+          
+          <!-- Total Tasks -->
+          <div class="stat-card" id="statTotalCard">
+            <div class="stat-header">
+              <div class="stat-icon-wrap icon-total">
+                <span>📚</span>
+              </div>
+              <span class="stat-trend-tag" id="statTrendText">All items</span>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value" id="statTotal">0</span>
+              <span class="stat-label">Total Tasks</span>
+              <p class="stat-desc">Scheduled assignments</p>
+            </div>
+            <div class="stat-card-glow"></div>
+          </div>
+
+          <!-- Completed Tasks -->
+          <div class="stat-card" id="statCompletedCard">
+            <div class="stat-header">
+              <div class="stat-icon-wrap icon-completed">
+                <span>✅</span>
+              </div>
+              <span class="stat-trend-tag trend-success">Completed</span>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value" id="statCompleted">0</span>
+              <span class="stat-label">Completed</span>
+              <p class="stat-desc">Accomplished work</p>
+            </div>
+            <div class="stat-card-glow glow-green"></div>
+          </div>
+
+          <!-- Pending Tasks -->
+          <div class="stat-card" id="statPendingCard">
+            <div class="stat-header">
+              <div class="stat-icon-wrap icon-pending">
+                <span>⏳</span>
+              </div>
+              <span class="stat-trend-tag trend-amber">In Progress</span>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value" id="statPending">0</span>
+              <span class="stat-label">Pending</span>
+              <p class="stat-desc">Active to-dos</p>
+            </div>
+            <div class="stat-card-glow glow-amber"></div>
+          </div>
+
+          <!-- Overdue Tasks -->
+          <div class="stat-card" id="statOverdueCard">
+            <div class="stat-header">
+              <div class="stat-icon-wrap icon-overdue">
+                <span>🚨</span>
+              </div>
+              <span class="stat-trend-tag trend-danger" id="overdueTag">Needs Focus</span>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value" id="statOverdue">0</span>
+              <span class="stat-label">Overdue</span>
+              <p class="stat-desc">Past deadline</p>
+            </div>
+            <div class="stat-card-glow glow-red"></div>
+          </div>
+
+        </div>
+
+        <!-- Productivity Progress Overview Card -->
+        <div class="progress-overview-card" id="statProgressCard">
+          <div class="progress-card-inner">
+            <div class="progress-info-side">
+              <div class="progress-badge-label">
+                <span>🔥</span>
+                <span>Focus &amp; Momentum</span>
+              </div>
+              <h3 class="progress-main-title">Today's Academic Completion</h3>
+              <p class="progress-subtext" id="progressTasksRatioText">0 of 0 tasks completed</p>
+              
+              <!-- Linear Progress Bar -->
+              <div class="linear-progress-wrapper">
+                <div class="linear-progress-track">
+                  <div class="linear-progress-fill" id="statProgressFill" style="width: 0%;"></div>
+                </div>
+                <div class="linear-progress-stats">
+                  <span class="progress-status-caption" id="progressStatusCaption">Start checking off tasks!</span>
+                  <span class="progress-percent-number" id="statPercentage">0%</span>
+                </div>
+              </div>
+
+              <!-- ASCII Visual Representation as requested in prompt -->
+              <div class="ascii-progress-box" id="asciiTaskProgress">
+                Task Completion: ░░░░░░░░░░░░░░░░░░░░ 0%
+              </div>
+            </div>
+
+            <!-- Circular Progress Indicator Side -->
+            <div class="progress-circle-side">
+              <div class="circular-progress-widget">
+                <svg class="circle-chart-svg" viewBox="0 0 120 120" aria-hidden="true">
+                  <circle class="circle-bg" cx="60" cy="60" r="50"></circle>
+                  <circle class="circle-meter" id="overviewCircleFill" cx="60" cy="60" r="50"></circle>
+                </svg>
+                <div class="circle-chart-center">
+                  <span class="circle-percent-val" id="overviewCircleVal">0%</span>
+                  <span class="circle-label">Done</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DASHBOARD DEADLINE WIDGETS GRID -->
+        <div class="dashboard-deadline-grid">
+          
+          <!-- Urgent "Needs Attention" Section (Tasks Due Today, Tomorrow, or Overdue) -->
+          <div class="prod-card urgent-needs-attention-card" id="needsAttentionCard">
+            <div class="prod-card-top">
+              <div class="card-title-icon-wrap">
+                <span class="urgent-card-icon">⚡</span>
+                <h3 class="prod-card-title">Needs Attention</h3>
+              </div>
+              <span class="card-pill-tag tag-urgent" id="needsAttentionCountBadge">0 urgent</span>
+            </div>
+            
+            <div class="urgent-tasks-list" id="needsAttentionList">
+              <div class="all-caught-up-box">
+                <span class="caught-up-emoji">🎉</span>
+                <h4>You're all caught up!</h4>
+                <p>No urgent deadlines due today, tomorrow, or overdue.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- "Upcoming Deadlines" Widget (Nearest scheduled assignments) -->
+          <div class="prod-card upcoming-deadlines-card" id="upcomingDeadlinesCard">
+            <div class="prod-card-top">
+              <div class="card-title-icon-wrap">
+                <span class="urgent-card-icon">⏳</span>
+                <h3 class="prod-card-title">Upcoming Deadlines</h3>
+              </div>
+              <a href="#tasks" class="link-btn font-bold" id="viewAllDeadlinesLink">View All →</a>
+            </div>
+
+            <div class="upcoming-deadlines-list" id="upcomingDeadlinesList">
+              <p class="sessions-empty-text">No upcoming deadlines scheduled.</p>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- SECTION 2: MY TASKS (FULL CRUD, FREE-TEXT SUBJECTS, SEARCH, FILTER)   -->
+      <!-- ===================================================================== -->
+      <section class="section tasks-section" id="tasks">
+        
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <span class="section-eyebrow">Coursework &amp; Assignments</span>
+            <h2 class="section-title">📚 My Tasks</h2>
+            <span class="section-badge" id="tasksCountBadge">0 tasks</span>
+          </div>
+
+          <button type="button" class="btn btn-primary" id="openAddModalBtnSecondary">
+            <span class="btn-icon">➕</span>
+            <span>Add Task</span>
+          </button>
+        </div>
+
+        <!-- Task Controls Bar: Search, Filters, Sorting -->
+        <div class="task-controls-bar">
+          
+          <!-- Search Input (Title, Subject, Description) -->
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="taskSearchInput" placeholder="Search tasks by title, subject, or description..." aria-label="Search tasks">
+            <button type="button" class="clear-search-btn" id="clearSearchBtn" aria-label="Clear search" title="Clear">✕</button>
+          </div>
+
+          <!-- Filter Tabs -->
+          <div class="filter-tabs" role="tablist" aria-label="Filter tasks">
+            <button type="button" class="filter-btn active" data-filter="all" id="filterAll" role="tab" aria-selected="true">
+              All <span class="filter-count" id="countAll">0</span>
+            </button>
+            <button type="button" class="filter-btn" data-filter="pending" id="filterPending" role="tab" aria-selected="false">
+              ⏳ Pending <span class="filter-count" id="countPending">0</span>
+            </button>
+            <button type="button" class="filter-btn" data-filter="completed" id="filterCompleted" role="tab" aria-selected="false">
+              ✅ Completed <span class="filter-count" id="countCompleted">0</span>
+            </button>
+            <button type="button" class="filter-btn" data-filter="overdue" id="filterOverdue" role="tab" aria-selected="false">
+              🚨 Overdue <span class="filter-count" id="countOverdue">0</span>
+            </button>
+            <button type="button" class="filter-btn" data-filter="high-priority" id="filterHigh" role="tab" aria-selected="false">
+              🔴 High <span class="filter-count" id="countHigh">0</span>
+            </button>
+            <button type="button" class="filter-btn" data-filter="medium-priority" id="filterMedium" role="tab" aria-selected="false">
+              🟡 Medium <span class="filter-count" id="countMedium">0</span>
+            </button>
+            <button type="button" class="filter-btn" data-filter="low-priority" id="filterLow" role="tab" aria-selected="false">
+              🟢 Low <span class="filter-count" id="countLow">0</span>
+            </button>
+          </div>
+
+          <!-- Sort Dropdown -->
+          <div class="sort-box">
+            <label for="taskSortSelect" class="sort-label">Sort By:</label>
+            <div class="sort-select-wrapper">
+              <select id="taskSortSelect" class="sort-select" aria-label="Sort tasks">
+                <option value="dueDate">📅 Due Date</option>
+                <option value="priority">⚡ Priority</option>
+                <option value="recentlyAdded">🕒 Recently Added</option>
+                <option value="title">🔤 Task Name</option>
+              </select>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Task Cards Grid Container -->
+        <div class="tasks-container" id="tasksContainer">
+          <!-- Dynamic Task Cards are rendered here -->
+        </div>
+
+        <!-- Empty State (Shown when no tasks match current filters) -->
+        <div class="empty-state" id="emptyState" style="display: none;">
+          <div class="empty-state-icon-box">
+            <span class="empty-icon" id="emptyStateIcon">📚</span>
+          </div>
+          <h3 class="empty-state-title" id="emptyStateTitle">No tasks yet</h3>
+          <p class="empty-state-desc" id="emptyStateDesc">Add your first assignment, project, or exam preparation.</p>
+          <button type="button" class="btn btn-primary btn-large" id="emptyAddBtn">
+            <span>➕ Add Your First Task</span>
+          </button>
+        </div>
+
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- SECTION 3: CALENDAR (FULL INTERACTIVE MONTH SCHEDULER)                -->
+      <!-- ===================================================================== -->
+      <section class="section calendar-section" id="calendar">
+        
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <span class="section-eyebrow">Visual Scheduler</span>
+            <h2 class="section-title">📅 Academic Calendar</h2>
+            <span class="section-badge">Interactive Schedule</span>
+          </div>
+          <button type="button" class="btn btn-secondary" id="calendarTodayBtn">
+            <span>📍 Go To Today</span>
+          </button>
+        </div>
+
+        <div class="calendar-layout-wrapper">
+          
+          <!-- Main Monthly Calendar Grid Card -->
+          <div class="calendar-main-card">
+            
+            <!-- Calendar Navigation Header -->
+            <div class="calendar-nav-bar">
+              <button type="button" class="cal-nav-btn" id="calPrevMonthBtn" aria-label="Previous Month" title="Previous Month">
+                <span>‹</span> Previous
+              </button>
+              <div class="calendar-current-month" id="calMonthYearTitle">
+                September 2026
+              </div>
+              <button type="button" class="cal-nav-btn" id="calNextMonthBtn" aria-label="Next Month" title="Next Month">
+                Next <span>›</span>
+              </button>
+            </div>
+
+            <!-- Days of Week Header -->
+            <div class="calendar-weekdays-grid">
+              <div class="weekday-cell">Mon</div>
+              <div class="weekday-cell">Tue</div>
+              <div class="weekday-cell">Wed</div>
+              <div class="weekday-cell">Thu</div>
+              <div class="weekday-cell">Fri</div>
+              <div class="weekday-cell">Sat</div>
+              <div class="weekday-cell">Sun</div>
+            </div>
+
+            <!-- Dynamic Days Grid -->
+            <div class="calendar-days-grid" id="calendarDaysGrid">
+              <!-- Calendar cells injected dynamically -->
+            </div>
+
+          </div>
+
+          <!-- Selected Date Inspector Sidebar Panel -->
+          <div class="calendar-day-panel" id="calendarDayPanel">
+            <div class="day-panel-header">
+              <div class="panel-date-display">
+                <span class="panel-calendar-icon">📅</span>
+                <div>
+                  <span class="panel-date-caption">Selected Schedule</span>
+                  <h3 class="panel-date-title" id="panelSelectedDateTitle">Select a Date</h3>
+                </div>
+              </div>
+              <button type="button" class="btn btn-primary btn-sm" id="calAddTaskForDateBtn">
+                <span>➕ Add Task</span>
+              </button>
+            </div>
+
+            <div class="day-panel-subtitle">Tasks due on this day:</div>
+
+            <div class="day-panel-tasks-list" id="panelTasksList">
+              <div class="panel-empty-hint">
+                <span class="hint-icon">👆</span>
+                <p>Click any date on the calendar to see tasks due on that day or add a new task directly.</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- SECTION 4: CUSTOMIZABLE STUDY TIMER (ANY DURATION & HISTORY)          -->
+      <!-- ===================================================================== -->
+      <section class="section timer-section" id="timer">
+        
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <span class="section-eyebrow">Deep Work &amp; Discipline</span>
+            <h2 class="section-title">⏱️ Study Timer</h2>
+            <span class="section-badge">Custom Sessions</span>
+          </div>
+          <div class="study-session-counter-badge" id="studySessionsBadge">
+            <span>📚 Today's Sessions:</span> <strong id="studySessionsCountDisplay">0</strong>
+          </div>
+        </div>
+
+        <div class="timer-card-wrapper">
+          
+          <!-- Timer Mode Selector: STUDY, SHORT BREAK, LONG BREAK -->
+          <div class="timer-mode-selector" role="group" aria-label="Timer Modes">
+            <button type="button" class="timer-mode-btn active" data-mode="study" id="modeStudy">
+              🎯 Study Session (<span id="modeStudyMinDisplay">45</span>m)
+            </button>
+            <button type="button" class="timer-mode-btn" data-mode="shortBreak" id="modeShortBreak">
+              ☕ Short Break (<span id="modeShortBreakMinDisplay">10</span>m)
+            </button>
+            <button type="button" class="timer-mode-btn" data-mode="longBreak" id="modeLongBreak">
+              🌴 Long Break (<span id="modeLongBreakMinDisplay">20</span>m)
+            </button>
+          </div>
+
+          <!-- Circular SVG Animated Timer Display -->
+          <div class="timer-display-container">
+            <svg class="timer-ring-svg" viewBox="0 0 280 280" aria-hidden="true">
+              <defs>
+                <linearGradient id="timerGlowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#f59e0b" />
+                  <stop offset="100%" stop-color="#f97316" />
+                </linearGradient>
+                <linearGradient id="timerBreakGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#10b981" />
+                  <stop offset="100%" stop-color="#06b6d4" />
+                </linearGradient>
+              </defs>
+              <circle class="timer-ring-bg" cx="140" cy="140" r="125"></circle>
+              <circle class="timer-ring-fill" id="timerRingFill" cx="140" cy="140" r="125"></circle>
+            </svg>
+            
+            <div class="timer-display-content">
+              <span class="timer-clock" id="timerClock">45:00</span>
+              <span class="timer-status-text" id="timerStatusText">Ready to Study</span>
+              <span class="timer-current-task" id="timerCurrentTaskText">No specific task selected</span>
+            </div>
+
+            <!-- Session Celebration Banner -->
+            <div class="timer-celebration" id="timerCelebration" style="display: none;">
+              <div class="celebration-content">
+                <span class="celebration-emoji" id="celebrationEmoji">🎉</span>
+                <h4 id="celebrationTitle">Study session completed!</h4>
+                <p id="celebrationSubtitle">Great discipline! Ready to take a well-earned break?</p>
+                <div class="celebration-actions">
+                  <button type="button" class="btn btn-primary" id="celebrationActionBtn">☕ Start Break</button>
+                  <button type="button" class="btn btn-secondary btn-sm" id="celebrationDismissBtn">Dismiss</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Timer Controls -->
+          <div class="timer-controls">
+            <button type="button" class="btn btn-timer btn-timer-primary" id="timerStartBtn">
+              <span>▶ Start</span>
+            </button>
+            <button type="button" class="btn btn-timer btn-timer-secondary" id="timerPauseBtn" disabled>
+              <span>⏸ Pause</span>
+            </button>
+            <button type="button" class="btn btn-timer btn-timer-reset" id="timerResetBtn">
+              <span>↻ Reset</span>
+            </button>
+          </div>
+
+          <!-- Custom Timer Settings Collapsible Panel -->
+          <div class="timer-custom-settings-card">
+            <div class="custom-settings-header" id="toggleTimerSettingsHeader">
+              <div class="settings-title-wrap">
+                <span class="settings-icon">⚙️</span>
+                <h4>Customize Durations &amp; Automation</h4>
+              </div>
+              <span class="settings-toggle-icon" id="timerSettingsToggleIcon">▾</span>
+            </div>
+
+            <div class="custom-settings-body" id="timerSettingsBody">
+              <p class="settings-note">Enter ANY positive duration in minutes. Values are saved to your Supabase account.</p>
+
+              <div class="settings-inputs-grid">
+                
+                <!-- Study Duration Input -->
+                <div class="setting-item">
+                  <label for="customStudyInput" class="setting-label">Study Duration</label>
+                  <div class="number-input-wrap">
+                    <input type="number" id="customStudyInput" class="form-control number-ctrl" min="1" max="300" value="45">
+                    <span class="input-unit">minutes</span>
+                  </div>
+                  <!-- Quick Preset Chips -->
+                  <div class="preset-chips">
+                    <button type="button" class="chip-btn" data-target="customStudyInput" data-val="25">25m</button>
+                    <button type="button" class="chip-btn" data-target="customStudyInput" data-val="30">30m</button>
+                    <button type="button" class="chip-btn active" data-target="customStudyInput" data-val="45">45m</button>
+                    <button type="button" class="chip-btn" data-target="customStudyInput" data-val="60">60m</button>
+                    <button type="button" class="chip-btn" data-target="customStudyInput" data-val="90">90m</button>
+                  </div>
+                </div>
+
+                <!-- Short Break Duration Input -->
+                <div class="setting-item">
+                  <label for="customShortBreakInput" class="setting-label">Short Break</label>
+                  <div class="number-input-wrap">
+                    <input type="number" id="customShortBreakInput" class="form-control number-ctrl" min="1" max="60" value="10">
+                    <span class="input-unit">minutes</span>
+                  </div>
+                  <div class="preset-chips">
+                    <button type="button" class="chip-btn" data-target="customShortBreakInput" data-val="5">5m</button>
+                    <button type="button" class="chip-btn active" data-target="customShortBreakInput" data-val="10">10m</button>
+                    <button type="button" class="chip-btn" data-target="customShortBreakInput" data-val="15">15m</button>
+                  </div>
+                </div>
+
+                <!-- Long Break Duration Input -->
+                <div class="setting-item">
+                  <label for="customLongBreakInput" class="setting-label">Long Break</label>
+                  <div class="number-input-wrap">
+                    <input type="number" id="customLongBreakInput" class="form-control number-ctrl" min="1" max="120" value="20">
+                    <span class="input-unit">minutes</span>
+                  </div>
+                  <div class="preset-chips">
+                    <button type="button" class="chip-btn" data-target="customLongBreakInput" data-val="15">15m</button>
+                    <button type="button" class="chip-btn active" data-target="customLongBreakInput" data-val="20">20m</button>
+                    <button type="button" class="chip-btn" data-target="customLongBreakInput" data-val="30">30m</button>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Automation Checkboxes -->
+              <div class="automation-toggles-row">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="autoStartBreakCheck">
+                  <span>Auto-start break when study session completes</span>
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" id="autoStartStudyCheck">
+                  <span>Auto-start study session when break finishes</span>
+                </label>
+              </div>
+
+              <div class="settings-actions-row">
+                <button type="button" class="btn btn-primary btn-sm" id="saveTimerSettingsBtn">
+                  <span>💾 Save Timer Preferences</span>
+                </button>
+                <span class="settings-save-feedback" id="timerSaveFeedback"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Study Session History -->
+          <div class="study-history-section">
+            <h4 class="history-title">📚 Study History</h4>
+            <div class="history-metrics-grid">
+              
+              <div class="history-metric-card">
+                <span class="history-metric-icon">⏱️</span>
+                <div>
+                  <span class="history-metric-num" id="historyTodayTime">0h 0m</span>
+                  <span class="history-metric-lbl">Today's Study Time</span>
+                </div>
+              </div>
+
+              <div class="history-metric-card">
+                <span class="history-metric-icon">📅</span>
+                <div>
+                  <span class="history-metric-num" id="historyWeekTime">0h 0m</span>
+                  <span class="history-metric-lbl">This Week's Study Time</span>
+                </div>
+              </div>
+
+              <div class="history-metric-card">
+                <span class="history-metric-icon">🎯</span>
+                <div>
+                  <span class="history-metric-num" id="historyTotalSessions">0</span>
+                  <span class="history-metric-lbl">Total Completed Sessions</span>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Recent Sessions List -->
+            <div class="recent-sessions-card">
+              <h5 class="recent-sessions-header">Recent Completed Sessions</h5>
+              <div class="sessions-list" id="sessionsList">
+                <p class="sessions-empty-text">No recorded study sessions yet. Start your first session above!</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- SECTION 5: PRODUCTIVITY ANALYTICS                                     -->
+      <!-- ===================================================================== -->
+      <section class="section productivity-section" id="productivity">
+        
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <span class="section-eyebrow">Academic Analytics</span>
+            <h2 class="section-title">📈 Productivity Dashboard</h2>
+            <span class="section-badge">Performance Metrics</span>
+          </div>
+        </div>
+
+        <div class="productivity-grid">
+          
+          <!-- Overall Performance Metrics Card -->
+          <div class="prod-card summary-card">
+            <div class="prod-card-top">
+              <h3 class="prod-card-title">Overall Productivity Summary</h3>
+              <span class="card-pill-tag">Live Metrics</span>
+            </div>
+
+            <div class="prod-metrics-row">
+              <div class="prod-metric-item">
+                <span class="prod-metric-num text-primary" id="prodTotalTasks">0</span>
+                <span class="prod-metric-label">Total Tasks</span>
+              </div>
+              <div class="prod-metric-item">
+                <span class="prod-metric-num text-success" id="prodCompletedTasks">0</span>
+                <span class="prod-metric-label">Completed</span>
+              </div>
+              <div class="prod-metric-item">
+                <span class="prod-metric-num text-warning" id="prodPendingTasks">0</span>
+                <span class="prod-metric-label">Pending</span>
+              </div>
+              <div class="prod-metric-item">
+                <span class="prod-metric-num text-danger" id="prodOverdueTasks">0</span>
+                <span class="prod-metric-label">Overdue</span>
+              </div>
+              <div class="prod-metric-item">
+                <span class="prod-metric-num text-accent" id="prodCompletionPercent">0%</span>
+                <span class="prod-metric-label">Completion %</span>
+              </div>
+              <div class="prod-metric-item">
+                <span class="prod-metric-num text-indigo" id="prodStudySessions">0</span>
+                <span class="prod-metric-label">Study Sessions</span>
+              </div>
+              <div class="prod-metric-item">
+                <span class="prod-metric-num text-teal" id="prodTotalStudyTime">0h 0m</span>
+                <span class="prod-metric-label">Total Study Time</span>
+              </div>
+            </div>
+
+            <!-- Task Completion Visual Bar -->
+            <div class="prod-progress-wrapper">
+              <div class="prod-progress-label-row">
+                <span class="progress-title">Task Completion</span>
+                <span class="progress-percent-val" id="prodTaskBarLabel">0%</span>
+              </div>
+              <div class="prod-progress-track">
+                <div class="prod-progress-bar" id="prodTaskProgressBar" style="width: 0%;"></div>
+              </div>
+              <div class="progress-ascii-display" id="prodAsciiTask">
+                Task Completion: ░░░░░░░░░░░░░░░░░░░░ 0%
+              </div>
+            </div>
+
+            <!-- Study Time Visual Bar -->
+            <div class="prod-progress-wrapper">
+              <div class="prod-progress-label-row">
+                <span class="progress-title">Study Time vs Target Goal</span>
+                <span class="progress-percent-val" id="prodStudyBarLabel">0%</span>
+              </div>
+              <div class="prod-progress-track">
+                <div class="prod-progress-bar bar-amber" id="prodStudyProgressBar" style="width: 0%;"></div>
+              </div>
+              <div class="progress-ascii-display" id="prodAsciiStudy">
+                Study Time: ░░░░░░░░░░░░░░░░░░░░ 0%
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Weekly Activity Chart Card -->
+          <div class="prod-card chart-card">
+            <div class="chart-header">
+              <div>
+                <h3 class="prod-card-title">Weekly Productivity Trend</h3>
+                <span class="chart-subtitle">Tasks completed &amp; study time over the last 7 days</span>
+              </div>
+              <span class="chart-pill-badge">7-Day Activity</span>
+            </div>
+            
+            <div class="weekly-chart-container" id="weeklyChartContainer">
+              <!-- Dynamic Chart Bars -->
+            </div>
+
+            <div class="chart-legend">
+              <span class="legend-item"><span class="legend-color-box active-bar"></span> Tasks Completed</span>
+              <span class="legend-summary" id="weeklySummaryText">Total 0 tasks completed this week</span>
+            </div>
+          </div>
+
+          <!-- Subject Distribution Card -->
+          <div class="prod-card subjects-breakdown-card">
+            <div class="prod-card-top">
+              <h3 class="prod-card-title">Tasks by Subject</h3>
+              <span class="card-pill-tag">Subject Breakdown</span>
+            </div>
+            <div class="subject-distribution-list" id="subjectDistributionList">
+              <p class="sessions-empty-text">No subjects added yet. Add tasks with custom subjects!</p>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- SECTION 6: MUSIC PLAYER & LOCAL MUSIC LIBRARY                         -->
+      <!-- ===================================================================== -->
+      <section class="section music-section" id="music">
+        
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <span class="section-eyebrow">Acoustic Focus</span>
+            <h2 class="section-title">🎵 Study Music &amp; Ambience</h2>
+            <span class="section-badge">Local Audio Player</span>
+          </div>
+
+          <!-- Add Music Button -->
+          <div class="music-header-actions">
+            <input type="file" id="musicFileInput" accept="audio/*" multiple style="display: none;">
+            <button type="button" class="btn btn-primary" id="addMusicFilesBtn">
+              <span class="btn-icon">📁</span>
+              <span>+ Add Music from Device</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Privacy & Local Audio Explanatory Banner -->
+        <div class="music-privacy-banner">
+          <div class="privacy-icon">🔒</div>
+          <div class="privacy-text">
+            <h4>100% Private Local Audio</h4>
+            <p>Select your favorite study songs or instrumental tracks directly from your device (MP3, WAV, OGG, M4A, FLAC, AAC). Files are played securely via the HTML5 File &amp; Audio APIs without being uploaded to any server.</p>
+          </div>
+        </div>
+
+        <!-- Ambient Study Sounds Generator (Instant Play bonus!) -->
+        <div class="ambient-soundboard-card">
+          <div class="soundboard-header">
+            <h4>⚡ Instant Focus Ambience</h4>
+            <p>No audio files on hand? Click to generate pure ambient focus sounds instantly.</p>
+          </div>
+          <div class="ambient-buttons-grid">
+            <button type="button" class="ambient-btn" data-ambient="rain">
+              <span class="ambient-icon">🌧️</span>
+              <span class="ambient-name">Gentle Rain</span>
+            </button>
+            <button type="button" class="ambient-btn" data-ambient="lofi">
+              <span class="ambient-icon">☕</span>
+              <span class="ambient-name">Lo-Fi Vinyl</span>
+            </button>
+            <button type="button" class="ambient-btn" data-ambient="white-noise">
+              <span class="ambient-icon">🌊</span>
+              <span class="ambient-name">White Noise</span>
+            </button>
+            <button type="button" class="ambient-btn" data-ambient="binaural">
+              <span class="ambient-icon">🧠</span>
+              <span class="ambient-name">Alpha Waves</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- User's Local Music Library & Queue -->
+        <div class="music-library-card">
+          <div class="library-header">
+            <div class="library-title-wrap">
+              <h3 class="library-title">🎵 My Study Playlist</h3>
+              <span class="playlist-count" id="playlistCountBadge">0 tracks</span>
+            </div>
+            <div class="library-actions">
+              <button type="button" class="btn btn-secondary btn-sm" id="clearPlaylistBtn" style="display: none;">
+                Clear Queue
+              </button>
+            </div>
+          </div>
+
+          <!-- Playlist Items Container -->
+          <div class="playlist-container" id="playlistContainer">
+            <div class="playlist-empty-state">
+              <span class="empty-music-icon">🎧</span>
+              <h4>No music tracks in queue</h4>
+              <p>Click "<strong>+ Add Music from Device</strong>" above to load audio files from your computer, phone, or tablet.</p>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- ======================================================================= -->
+    <!-- PERSISTENT MINI-PLAYER (CONTINUES PLAYING WHILE SWITCHING TABS)         -->
+    <!-- ======================================================================= -->
+    <div class="persistent-music-player" id="persistentMusicPlayer">
+      
+      <!-- Audio Element (Single persistent instance) -->
+      <audio id="globalAudioPlayer" preload="auto"></audio>
+
+      <div class="player-container">
+        
+        <!-- Track Info -->
+        <div class="player-track-info">
+          <div class="player-album-art" id="playerArt">
+            <span class="art-icon" id="playerArtIcon">🎵</span>
+            <div class="art-equalizer" id="playerEqualizer" style="display: none;">
+              <span class="eq-bar bar-1"></span>
+              <span class="eq-bar bar-2"></span>
+              <span class="eq-bar bar-3"></span>
+            </div>
+          </div>
+          <div class="player-text-wrap">
+            <span class="player-track-title" id="playerTrackTitle">No track playing</span>
+            <span class="player-track-source" id="playerTrackSource">Select music from device or use Ambience</span>
+          </div>
+        </div>
+
+        <!-- Center Controls: Prev, Play/Pause, Next, Progress Bar -->
+        <div class="player-center-controls">
+          <div class="player-buttons-row">
+            <button type="button" class="player-ctrl-btn" id="playerPrevBtn" title="Previous Track" aria-label="Previous Track">
+              ⏮
+            </button>
+            <button type="button" class="player-ctrl-btn btn-play-pause" id="playerPlayPauseBtn" title="Play" aria-label="Play / Pause">
+              ▶
+            </button>
+            <button type="button" class="player-ctrl-btn" id="playerNextBtn" title="Next Track" aria-label="Next Track">
+              ⏭
+            </button>
+            <button type="button" class="player-ctrl-btn" id="playerLoopBtn" title="Toggle Repeat" aria-label="Toggle Repeat">
+              🔁
+            </button>
+          </div>
+
+          <!-- Progress / Seek Slider -->
+          <div class="player-progress-row">
+            <span class="player-time" id="playerCurrentTime">00:00</span>
+            <input type="range" class="player-seek-slider" id="playerSeekSlider" min="0" max="100" value="0" aria-label="Seek track position">
+            <span class="player-time" id="playerDurationTime">00:00</span>
+          </div>
+        </div>
+
+        <!-- Right Side: Volume & Focus Mode Shortcut -->
+        <div class="player-right-controls">
+          <div class="volume-slider-wrap">
+            <button type="button" class="volume-btn" id="playerMuteBtn" aria-label="Mute / Unmute">🔊</button>
+            <input type="range" class="volume-slider" id="playerVolumeSlider" min="0" max="1" step="0.01" value="0.75" aria-label="Volume">
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" id="playerFocusModeBtn" title="Enter Focus Mode">
+            🎯 Focus
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Application Footer -->
+    <footer class="app-footer">
+      <div class="footer-container">
+        <div class="footer-brand">
+          🎓 <strong>STUDYFLOW</strong> — Student Task Manager &amp; Productivity Dashboard
+        </div>
+        <p class="footer-note">
+          Secured with Supabase Authentication, PostgreSQL Database, and Row Level Security. Local audio files remain 100% on your device.
+        </p>
+        <div class="footer-links">
+          <a href="#dashboard">Dashboard</a> • 
+          <a href="#tasks">Tasks</a> • 
+          <a href="#calendar">Calendar</a> • 
+          <a href="#timer">Study Timer</a> • 
+          <a href="#productivity">Productivity</a> • 
+          <a href="#music">Music</a>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 3. FOCUS MODE IMMERSIVE FULL-SCREEN OVERLAY                               -->
+  <!-- ========================================================================= -->
+  <div class="focus-mode-overlay" id="focusModeOverlay" style="display: none;">
+    <div class="focus-mode-container">
+      
+      <!-- Focus Header -->
+      <div class="focus-header">
+        <div class="focus-brand">
+          <span class="focus-dot"></span>
+          <span>FOCUS MODE</span>
+        </div>
+        
+        <!-- Current Active Task Selector -->
+        <div class="focus-task-picker">
+          <label for="focusTaskSelect" class="focus-task-label">Active Task:</label>
+          <select id="focusTaskSelect" class="focus-task-select">
+            <option value="">General Study Session</option>
+          </select>
+        </div>
+
+        <!-- Exit Focus Mode Button -->
+        <button type="button" class="btn btn-secondary btn-exit-focus" id="exitFocusModeBtn">
+          ✕ Exit Focus Mode
+        </button>
+      </div>
+
+      <!-- Center Focus Timer -->
+      <div class="focus-center-body">
+        
+        <div class="focus-timer-ring-wrap">
+          <svg class="focus-ring-svg" viewBox="0 0 320 320" aria-hidden="true">
+            <circle class="focus-ring-bg" cx="160" cy="160" r="145"></circle>
+            <circle class="focus-ring-fill" id="focusRingFill" cx="160" cy="160" r="145"></circle>
+          </svg>
+          <div class="focus-timer-text-content">
+            <span class="focus-timer-clock" id="focusTimerClock">45:00</span>
+            <span class="focus-timer-status" id="focusTimerStatus">Deep Focus Session</span>
+            <span class="focus-timer-task-name" id="focusTimerTaskDisplay">General Study Session</span>
+          </div>
+        </div>
+
+        <!-- Focus Timer Quick Controls -->
+        <div class="focus-timer-controls">
+          <button type="button" class="btn btn-primary btn-large" id="focusStartBtn">▶ Start Focus</button>
+          <button type="button" class="btn btn-secondary btn-large" id="focusPauseBtn" disabled>⏸ Pause</button>
+          <button type="button" class="btn btn-secondary btn-sm" id="focusResetBtn">↻ Reset</button>
+        </div>
+
+      </div>
+
+      <!-- Focus Integrated Music Bar -->
+      <div class="focus-music-bar">
+        <div class="focus-music-info">
+          <span class="focus-music-icon">🎵</span>
+          <span class="focus-music-title" id="focusMusicTitle">No music playing</span>
+        </div>
+        <div class="focus-music-controls">
+          <button type="button" class="focus-music-btn" id="focusMusicPrevBtn">⏮</button>
+          <button type="button" class="focus-music-btn btn-focus-play" id="focusMusicPlayBtn">▶</button>
+          <button type="button" class="focus-music-btn" id="focusMusicNextBtn">⏭</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 4. MODALS & DIALOGS                                                       -->
+  <!-- ========================================================================= -->
+
+  <!-- Modal A: Add / Edit Task Modal (FREE TEXT SUBJECT INPUT) -->
+  <div class="modal-backdrop" id="taskModalBackdrop" role="dialog" aria-modal="true" aria-labelledby="taskModalTitle" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-header-icon-wrap">
+          <span id="modalHeaderIcon">✨</span>
+        </div>
+        <div class="modal-header-text">
+          <h3 class="modal-title" id="taskModalTitle">➕ Add New Task</h3>
+          <p class="modal-subtitle">Keep track of your coursework and deadlines</p>
+        </div>
+        <button type="button" class="modal-close-btn" id="taskModalCloseBtn" aria-label="Close dialog">✕</button>
+      </div>
+
+      <form id="taskForm" novalidate>
+        <input type="hidden" id="taskFormId" value="">
+
+        <!-- Task Title -->
+        <div class="form-group">
+          <label for="taskTitleInput" class="form-label">
+            Task Title <span class="required-star">*</span>
+          </label>
+          <input 
+            type="text" 
+            id="taskTitleInput" 
+            class="form-control" 
+            placeholder="e.g. DBMS Normalization Assignment" 
+            required 
+            autocomplete="off"
+            maxlength="140"
+          >
+          <span class="form-error-msg" id="taskTitleError">Please enter a task title.</span>
+        </div>
+
+        <!-- Subject Input: FREE-TEXT AS REQUIRED (NO FIXED DROPDOWN) -->
+        <div class="form-group">
+          <div class="label-with-hint">
+            <label for="taskSubjectInput" class="form-label">
+              Subject / Course <span class="required-star">*</span>
+            </label>
+            <span class="label-hint">Type any custom subject</span>
+          </div>
+          <input 
+            type="text" 
+            id="taskSubjectInput" 
+            class="form-control" 
+            placeholder="e.g. DBMS, Operating Systems, Math, AI, Physics, etc." 
+            list="subjectSuggestionsList"
+            required 
+            autocomplete="off"
+            maxlength="80"
+          >
+          <!-- Dynamic suggestion datalist for quick autocomplete -->
+          <datalist id="subjectSuggestionsList">
+            <option value="DBMS">
+            <option value="Operating Systems">
+            <option value="Data Structures & Algorithms">
+            <option value="Computer Networks">
+            <option value="Mathematics">
+            <option value="Artificial Intelligence">
+            <option value="Software Engineering">
+            <option value="Web Development">
+          </datalist>
+          <span class="form-error-msg" id="taskSubjectError">Please enter a subject name.</span>
+        </div>
+
+        <!-- Description (Optional) -->
+        <div class="form-group">
+          <label for="taskDescriptionInput" class="form-label">
+            Description <span class="optional-tag">(Optional)</span>
+          </label>
+          <textarea 
+            id="taskDescriptionInput" 
+            class="form-control form-textarea" 
+            rows="3" 
+            placeholder="Add details, submission links, instructions, or sub-tasks..."
+            maxlength="800"
+          ></textarea>
+        </div>
+
+        <!-- Due Date & Priority Row -->
+        <div class="form-row">
+          
+          <!-- Due Date Picker -->
+          <div class="form-group form-col">
+            <label for="taskDueDateInput" class="form-label">
+              Due Date <span class="required-star">*</span>
+            </label>
+            <input 
+              type="date" 
+              id="taskDueDateInput" 
+              class="form-control" 
+              required
+            >
+            <span class="form-error-msg" id="taskDueDateError">Please select a valid due date.</span>
+          </div>
+
+          <!-- Priority Selector -->
+          <div class="form-group form-col">
+            <label for="taskPrioritySelect" class="form-label">
+              Priority <span class="required-star">*</span>
+            </label>
+            <select id="taskPrioritySelect" class="form-control form-select" required>
+              <option value="high">🔴 High</option>
+              <option value="medium" selected>🟡 Medium</option>
+              <option value="low">🟢 Low</option>
+            </select>
+          </div>
+
+        </div>
+
+        <!-- Status Selector -->
+        <div class="form-group">
+          <label for="taskStatusSelect" class="form-label">Status</label>
+          <select id="taskStatusSelect" class="form-control form-select">
+            <option value="pending" selected>⏳ Pending</option>
+            <option value="completed">✅ Completed</option>
+          </select>
+        </div>
+
+        <!-- Modal Footer Actions -->
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="taskModalCancelBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="taskFormSubmitBtn">Save Task</button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal B: Delete Task Confirmation Modal -->
+  <div class="modal-backdrop" id="deleteModalBackdrop" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle" style="display: none;">
+    <div class="modal-card modal-card-sm">
+      <div class="modal-header">
+        <div class="modal-header-icon-wrap delete-icon-wrap">
+          <span>🗑️</span>
+        </div>
+        <div class="modal-header-text">
+          <h3 class="modal-title" id="deleteModalTitle">Delete Task</h3>
+          <p class="modal-subtitle">Permanent action</p>
+        </div>
+        <button type="button" class="modal-close-btn" id="deleteModalCloseBtn" aria-label="Close dialog">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="delete-warning-text">Are you sure you want to delete this task?</p>
+        <p class="delete-task-target" id="deleteTaskTitlePreview">"Task Title"</p>
+        <p class="delete-subtext">This action will remove the task permanently from your Supabase database.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="cancelDeleteBtn">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete Task</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal C: Edit Profile Modal -->
+  <div class="modal-backdrop" id="profileModalBackdrop" role="dialog" aria-modal="true" aria-labelledby="profileModalTitle" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-header-icon-wrap">
+          <span>👤</span>
+        </div>
+        <div class="modal-header-text">
+          <h3 class="modal-title" id="profileModalTitle">Edit User Profile</h3>
+          <p class="modal-subtitle">Update your name, avatar, and study goals</p>
+        </div>
+        <button type="button" class="modal-close-btn" id="profileModalCloseBtn" aria-label="Close dialog">✕</button>
+      </div>
+
+      <form id="profileForm" novalidate>
+        
+        <div class="form-group">
+          <label for="profileFullNameInput" class="form-label">Full Name <span class="required-star">*</span></label>
+          <input type="text" id="profileFullNameInput" class="form-control" placeholder="e.g. Ahmadullah" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Choose Avatar</label>
+          <div class="avatar-picker-row">
+            <button type="button" class="avatar-option active" data-avatar="👨‍🎓">👨‍🎓</button>
+            <button type="button" class="avatar-option" data-avatar="👩‍🎓">👩‍🎓</button>
+            <button type="button" class="avatar-option" data-avatar="🧑‍💻">🧑‍💻</button>
+            <button type="button" class="avatar-option" data-avatar="👩‍💻">👩‍💻</button>
+            <button type="button" class="avatar-option" data-avatar="🚀">🚀</button>
+            <button type="button" class="avatar-option" data-avatar="⚡">⚡</button>
+            <button type="button" class="avatar-option" data-avatar="📚">📚</button>
+          </div>
+          <input type="hidden" id="profileAvatarChoice" value="👨‍🎓">
+        </div>
+
+        <div class="form-group">
+          <label for="profileStudyGoalInput" class="form-label">Preferred Study Goal</label>
+          <input type="text" id="profileStudyGoalInput" class="form-control" placeholder="e.g. 4 hours / day or 25 hours / week" value="4 hours / day">
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="profileModalCancelBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveProfileBtn">Save Profile</button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal D: Supabase Configuration Settings Modal -->
+  <div class="modal-backdrop" id="supabaseSettingsModal" role="dialog" aria-modal="true" aria-labelledby="supabaseModalTitle" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-header-icon-wrap">
+          <span>⚡</span>
+        </div>
+        <div class="modal-header-text">
+          <h3 class="modal-title" id="supabaseModalTitle">Supabase Configuration</h3>
+          <p class="modal-subtitle">Connect your PostgreSQL database &amp; Auth</p>
+        </div>
+        <button type="button" class="modal-close-btn" id="supabaseModalCloseBtn" aria-label="Close dialog">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <p class="supabase-info-text">
+          Enter your Supabase credentials below. Find them in your <strong>Supabase Dashboard → Project Settings → API</strong>.
+        </p>
+
+        <form id="supabaseConfigForm" novalidate>
+          <div class="form-group">
+            <label for="cfgSupabaseUrl" class="form-label">Project URL <span class="required-star">*</span></label>
+            <input type="url" id="cfgSupabaseUrl" class="form-control" placeholder="https://your-project-id.supabase.co" required>
+          </div>
+
+          <div class="form-group">
+            <label for="cfgSupabaseKey" class="form-label">Anon / Publishable API Key <span class="required-star">*</span></label>
+            <textarea id="cfgSupabaseKey" class="form-control form-textarea" rows="3" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." required></textarea>
+            <span class="field-hint">Never paste the secret service_role key into frontend code.</span>
+          </div>
+
+          <div class="connection-test-result" id="connectionTestResult" style="display: none;"></div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="testSupabaseBtn">
+              <span>🔍 Test Connection</span>
+            </button>
+            <button type="submit" class="btn btn-primary" id="saveSupabaseConfigBtn">
+              <span>💾 Save &amp; Connect</span>
+            </button>
+          </div>
+        </form>
+
+        <div class="schema-hint-box">
+          <strong>Database Schema Required:</strong> Run <code>supabase/schema.sql</code> in your Supabase SQL Editor to create tables and RLS policies.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal E: Reminder & Notification Settings Modal -->
+  <div class="modal-backdrop" id="notificationSettingsModal" role="dialog" aria-modal="true" aria-labelledby="notifModalTitle" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-header-icon-wrap">
+          <span>🔔</span>
+        </div>
+        <div class="modal-header-text">
+          <h3 class="modal-title" id="notifModalTitle">Notification &amp; Reminder Settings</h3>
+          <p class="modal-subtitle">Configure automated due-date reminders &amp; alerts</p>
+        </div>
+        <button type="button" class="modal-close-btn" id="notifModalCloseBtn" aria-label="Close dialog">✕</button>
+      </div>
+
+      <div class="modal-body">
+        
+        <!-- Browser Notification Status Banner -->
+        <div class="browser-notif-status-box" id="browserNotifStatusBox">
+          <div class="status-left">
+            <span class="status-icon" id="notifPermissionIcon">🟡</span>
+            <div>
+              <span class="status-label">Browser Notifications</span>
+              <strong class="status-val" id="notifPermissionStatusText">Permission Required</strong>
+            </div>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" id="requestNotifPermissionModalBtn">
+            Request Permission
+          </button>
+        </div>
+        <p class="status-help-text" id="notifBlockedHelpText" style="display: none;">
+          ⚠️ Notifications are blocked by your browser. Enable them in your browser site settings to receive background deadline alerts.
+        </p>
+
+        <!-- Notification Sound Toggle -->
+        <div class="settings-toggle-row">
+          <div>
+            <span class="toggle-title">🔊 Notification Sound</span>
+            <p class="toggle-desc">Play a gentle alert chime when an in-app reminder arrives</p>
+          </div>
+          <label class="switch-toggle">
+            <input type="checkbox" id="settingNotifSound" checked>
+            <span class="slider-round"></span>
+          </label>
+        </div>
+
+        <!-- Automatic Deadline Reminders Checklist -->
+        <div class="reminder-timings-card">
+          <h4 class="timings-title">Automated Deadline Reminder Levels</h4>
+          <p class="timings-subtext">Choose when STUDYFLOW should alert you before deadlines:</p>
+
+          <div class="timing-checkboxes-list">
+            <label class="checkbox-label">
+              <input type="checkbox" id="settingTiming7Days" checked>
+              <span>📚 7 days before deadline</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="settingTiming3Days" checked>
+              <span>⚠️ 3 days before deadline</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="settingTiming1Day" checked>
+              <span>🚨 1 day before deadline (Tomorrow)</span>
+            </label>
+            <label class="checkbox-label timing-locked">
+              <input type="checkbox" id="settingTimingDueToday" checked disabled>
+              <span>🔴 On due date (Due Today) <strong class="badge-locked">Mandatory</strong></span>
+            </label>
+            <label class="checkbox-label timing-locked">
+              <input type="checkbox" id="settingTimingOverdue" checked disabled>
+              <span>⛔ Overdue alerts <strong class="badge-locked">Mandatory</strong></span>
+            </label>
+          </div>
+          <span class="field-hint">Note: Critical "Due Today" and "Overdue" alerts cannot be disabled to protect your grades.</span>
+        </div>
+
+        <!-- User Timezone Setting -->
+        <div class="form-group" style="margin-top: 14px;">
+          <label for="settingTimezoneSelect" class="form-label">Local Timezone</label>
+          <select id="settingTimezoneSelect" class="form-control form-select">
+            <option value="UTC">UTC</option>
+          </select>
+          <span class="field-hint">Deadlines and reminders calculate "Tomorrow" and "Today" based on your local timezone.</span>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="notifModalCancelBtn">Cancel</button>
+          <button type="button" class="btn btn-primary" id="saveNotifSettingsBtn">Save Settings</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Animated Toast Notification Container -->
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <!-- Application Main JavaScript -->
+  <script src="script.js"></script>
+</body>
+</html>
